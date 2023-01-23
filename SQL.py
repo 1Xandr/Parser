@@ -11,10 +11,10 @@ connection = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor)
 
 
-def fill_list_of_dishes(id, name, image, description, time, category, cuisine):
+def fill_list_of_dishes(id, name, image, description, time, category, cuisine, time_min):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `List_of_dishes` (ID, Name, Foto, Description, TimeOfMaking, Category, Cuisine) "
-                       f"VALUES ({id}, '{name}','{image}', '{description}', '{time}', '{category}', '{cuisine}');")
+        cursor.execute(f"INSERT INTO `List_of_dishes` (ID, Name, Foto, Description, TimeOfMaking, Category, Cuisine, TimeOfMakingMin) "
+                       f"VALUES ({id}, '{name}','{image}', '{description}', '{time}', '{category}', '{cuisine}', {time_min});")
         connection.commit()
 
 

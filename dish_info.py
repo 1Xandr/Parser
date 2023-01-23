@@ -3,6 +3,23 @@ from bs4 import BeautifulSoup
 from search_equipment import check_equipment, equipment_for_sql
 
 
+def cooking_time(text: str) -> int:
+    """
+    The point of this function is take "1 hour 30 min" -> 90
+    For Django filter -> Find all dish that less or equal than 90 min
+    :param text: `get_time` from `get_data` -> 1 hour 30 minute | 5 minute
+    :return: "1 hour 30 min" -> 90
+    """
+    total = 0  # What we will return
+    text = text.split(" ")  # "1 hour 30 min" -> ["1", "hour", "30", "min",]
+    for i in text:
+        if "час" in i:
+            total += 60 * int(text[0])
+        if "ми" in i:
+            total += int(text[text.index(i) - 1])  # ["1", "hour", "30", "min",] min id = 3 -> 3 - 1 = "30"
+    return total
+
+
 def get_data(url: str):
     """
     Sometimes dish hasn't desrciprion, so I check and if dish hasn't then `desrciprion` return None.
@@ -47,5 +64,5 @@ def get_data(url: str):
 
     # Get time of cook -> str
     get_time = soup.find("div", class_="emotion-my9yfq").text  # 30 минут
-
-    return desrciprion, instruction_data, calories, protein, fat, carbohydrate, get_time, equipment
+    get_time_min = cooking_time(get_time)
+    return desrciprion, instruction_data, calories, protein, fat, carbohydrate, get_time, equipment, get_time_min

@@ -59,7 +59,7 @@ for data_dish in get_info():
 
         # Get info of dish in dish_info.py
         dish_info = get_data(url)
-        description, cook_time = dish_info[0], dish_info[6]
+        description, cook_time, time_min = dish_info[0], dish_info[6], dish_info[8]
         instruction = dish_info[1]  # list -> [[text, number], [text, number]]
         calories, protein, fat, carbohydrate = dish_info[2], dish_info[3], dish_info[4], dish_info[5]
 
@@ -76,7 +76,7 @@ for data_dish in get_info():
         seeder_for_flour, garlic_crusher = equipment[12], equipment[13]
 
         # filling into MySql database
-        fill_list_of_dishes(id_sql, name, image, description, cook_time, categories, cuisine)
+        fill_list_of_dishes(id_sql, name, image, description, cook_time, categories, cuisine, time_min)
         fill_energy_value(id_sql, calories, protein, fat, carbohydrate)
 
         for step in instruction:
