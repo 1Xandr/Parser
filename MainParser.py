@@ -20,11 +20,14 @@ def get_info():
     :return: name_dish: str | img_dish: str | url_dish: str | cuisine_dish: str | categories_dish: str
     """
     for page in range(1, 715):  # how many page we need to parse | site have 714 pages
-        site_url = f'https://eda.ru/recepty?page={page}'
-        response = requests.get(url=site_url, headers=headers)
-        beautiful_soup = BeautifulSoup(response.text, 'lxml')  # parsing html code
-        data = beautiful_soup.find_all("div", class_="emotion-1f6ych6")  # get data from each dish
-
+        try:
+            site_url = f'https://eda.ru/recepty?page={page}'
+            response = requests.get(url=site_url, headers=headers)
+            beautiful_soup = BeautifulSoup(response.text, 'lxml')  # parsing html code
+            data = beautiful_soup.find_all("div", class_="emotion-1f6ych6")  # get data from each dish
+        except Exception as exce:
+            print("Chunk", exce)
+            continue
         for dish in data:  # how many dish we have | one page = 14 dishes
             try:
                 time.sleep(1)  # make pause in parser work
@@ -35,19 +38,27 @@ def get_info():
                 cuisine_dish = cuisine_cat[1].text if cuisine_cat[1] else None  # if no cuisine_dish -> None
 
                 url_dish = "https://eda.ru" + dish.find("a").get("href")
+                url_slug = dish.find("a").get("href")
                 name_dish = dish.find("div", class_='emotion-1eugp2w').text.replace("'", "’")
+                if name_dish == "Паста с лисичками":
+                    continue
 
-                get_img = dish.find("div", class_='emotion-0')  # if image have "Спецпроект" -> None
+                get_img = dish.find("picture", class_='emotion-0')  # if image have "Спецпроект" -> None
                 # if get_img == None -> class_='emotion-125jgdy'
                 get_img = dish.find("div", class_='emotion-125jgdy') if not get_img else get_img
                 img_dish = get_img.find("img").get("src")
-                yield name_dish, img_dish, url_dish, categories_dish, cuisine_dish, page
+                yield name_dish, img_dish, url_dish, categories_dish, cuisine_dish, page, url_slug
+
             except Exception as exe:
                 print("firs", page, exe)
                 continue
 
 
-id_sql = 1
+id_dish = 1
+id_instr = 1
+id_ingredient = 1
+id_energy = 1
+
 for data_dish in get_info():
     try:
         # Get info from function "get_info"
@@ -56,6 +67,7 @@ for data_dish in get_info():
         url = data_dish[2]
         categories = data_dish[3]
         cuisine = data_dish[4]
+        slug = data_dish[6]
 
         # Get info of dish in dish_info.py
         dish_info = get_data(url)
@@ -69,26 +81,32 @@ for data_dish in get_info():
         default_quant = ingredient_info[1]  # int
 
         # Get info of equipment for SQL
-        equipment = dish_info[7]
-        pan, saucepan, microwave, oven = equipment[0], equipment[1], equipment[2], equipment[3]
-        blender, grill, mixer, slowCooker = equipment[4], equipment[5], equipment[6], equipment[7]
-        meat_grinder, grater, steamer, mortar = equipment[8], equipment[9], equipment[10], equipment[11]
-        seeder_for_flour, garlic_crusher = equipment[12], equipment[13]
+        equipment = dish_info[7]  # list
 
         # filling into MySql database
-        fill_list_of_dishes(id_sql, name, image, description, cook_time, categories, cuisine, time_min)
-        fill_energy_value(id_sql, calories, protein, fat, carbohydrate)
+        category_id = get_id(categories, "base_category")
+        cuisine_id = get_id(cuisine, "base_cuisine")
+        fill_energy_value(calories, protein, fat, carbohydrate)
+        fill_list_of_dishes(name, image, description, cook_time, time_min, slug, id_energy, category_id, cuisine_id)
+        id_energy += 1
 
         for step in instruction:
-            fill_instruction(id_sql, step[1], step[0])  # id, [text, number]
+            fill_instruction(step[1], step[0])  # id, [text, number]
+            fill_M2M(id_dish, id_instr, "base_list_of_dish_instruction", "instruction_id")
+            id_instr += 1
 
         for ing in ingredient:
-            fill_ingredients(id_sql, ing[0], ing[1], ing[2], default_quant)  # 1, ['Говядина', '500', 'г'], 6
+            fill_ingredients(ing[0], ing[1], ing[2], default_quant)  # 1, ['Говядина', '500', 'г'], 6
+            fill_M2M(id_dish, id_ingredient, "base_list_of_dish_ingredient", "ingredients_id")
+            id_ingredient += 1
 
-        fill_equipment(id_sql, pan, saucepan, microwave, oven, blender, grill, mixer, slowCooker, meat_grinder,
-                       grater, steamer, mortar, seeder_for_flour, garlic_crusher)
+        for equip in equipment:  # fill m2m table
+            if equip != "":  # if dish has no key word for equipment
+                equip_id = get_id(equip, "base_equipment")
+                fill_M2M(id_dish, equip_id, "base_list_of_dish_equipment", "equipment_id")
 
-        id_sql += 1
+
+        id_dish += 1
     except Exception as ex:
-        print("sec", data_dish[5], ex)
+        print("sec", data_dish[5], ex, id_dish)
         continue

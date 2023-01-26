@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from search_equipment import check_equipment, equipment_for_sql
+from search_equipment import check_equipment, translate
 
 
 def cooking_time(text: str) -> int:
@@ -12,11 +12,11 @@ def cooking_time(text: str) -> int:
     """
     total = 0  # What we will return
     text = text.split(" ")  # "1 hour 30 min" -> ["1", "hour", "30", "min",]
-    for i in text:
-        if "час" in i:
+    for word in text:
+        if "час" in word:
             total += 60 * int(text[0])
-        if "ми" in i:
-            total += int(text[text.index(i) - 1])  # ["1", "hour", "30", "min",] min id = 3 -> 3 - 1 = "30"
+        if "ми" in word:
+            total += int(text[text.index(word) - 1])  # ["1", "hour", "30", "min",] min id = 3 -> 3 - 1 = "30"
     return total
 
 
@@ -54,7 +54,7 @@ def get_data(url: str):
         # check equipment in `text`
         check_equipment(text, equipment)  # append list in list because var local
     # list for SQL
-    equipment = equipment_for_sql(list(set(equipment)))  # ["кастрюл", "кастрюл", "сковород"] -> ["кастрюл", "сковород"]
+    equipment = translate(list(set(equipment)))  # ["Pan", "Microwave", "Pan"] -> ["Pan", "Microwave"]
 
     # Get energy value per serving -> all int
     calories = soup.find("span", itemprop="calories").text

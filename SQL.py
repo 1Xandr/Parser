@@ -11,46 +11,58 @@ connection = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor)
 
 
-def fill_list_of_dishes(id, name, image, description, time, category, cuisine, time_min):
+def fill_list_of_dishes(name, image, description, time, time_min, slug, energy_id, category_id, cuisine_id):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `List_of_dishes` (ID, Name, Foto, Description, TimeOfMaking, Category, Cuisine, TimeOfMakingMin) "
-                       f"VALUES ({id}, '{name}','{image}', '{description}', '{time}', '{category}', '{cuisine}', {time_min});")
+        cursor.execute(f"INSERT INTO `base_list_of_dish` "
+                       f"(name, image, description, time, time_min, url, energy_value_id, category_id, cuisine_id) "
+                       f"VALUES ('{name}','{image}', '{description}', "
+                       f"'{time}', {time_min}, '{slug}', {energy_id}, {category_id}, {cuisine_id});")
         connection.commit()
 
 
-def fill_energy_value(id, calories, proteins, fats, carbohydrates):
+def fill_energy_value(calories, proteins, fats, carbohydrates):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `Energy_value` (ID, Calories, Proteins, Fats, Carbohydrates) "
-                       f"VALUES ({id}, {calories}, {proteins}, {fats}, {carbohydrates});")
+        cursor.execute(f"INSERT INTO `base_energy_value` (calories, proteins, fats, carbohydrates) "
+                       f"VALUES ({calories}, {proteins}, {fats}, {carbohydrates});")
         connection.commit()
 
 
-def fill_instruction(id, number, instructionText):
+def fill_instruction(number, instructionText):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `Instruction` (ID, Number, InstructionText) "
-                       f"VALUES ({id}, {number}, '{instructionText}');")
+        cursor.execute(f"INSERT INTO `base_instruction` (number, text) "
+                       f"VALUES ({number}, '{instructionText}');")
         connection.commit()
 
 
-def fill_equipment(id, pan, saucepan, microwave, oven, blender, grill, mixer, slowCooker, meat_grinder,
-                   grater, steamer, mortar, seeder_for_flour, garlic_crusher):
+def fill_ingredients(name, quan, unit, default_quant):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `Equipment` (ID, Pan, Saucepan, Microwave, Oven, Blender, Grill, Mixer, SlowCooker,"
-                       f" MeatGrinder, Grater, Steamer, Mortar, Seeder_for_flour, Garlic_crusher) "
-                       f"VALUES ({id}, {pan}, {saucepan}, {microwave}, {oven}, {blender}, {grill}, {mixer}, {slowCooker},"
-                       f"{meat_grinder}, {grater}, {steamer}, {mortar}, {seeder_for_flour}, {garlic_crusher});")
+        cursor.execute(f"INSERT INTO `base_ingredients` (name, quantity, unit, default_quant) "
+                       f"VALUES ('{name}', '{quan}', '{unit}', {default_quant});")
         connection.commit()
 
 
-def fill_ingredients(id, name: str, quan, unit, default_quant):
+def get_id(name, table):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `Ingredients` (ID, IngredientName, Quantity, unit, Default_quant) "
-                       f"VALUES ({id}, '{name}', '{quan}', '{unit}', {default_quant});")
+        cursor.execute(f"SELECT `id` FROM `{table}` WHERE name = '{name}'")
+        return cursor.fetchall()[0]["id"]
+
+
+def fill_M2M(id_dish, second_id, table, second_id_name):
+    with connection.cursor() as cursor:
+        cursor.execute(f"INSERT INTO `{table}` (`list_of_dish_id`, `{second_id_name}`) "
+                       f"VALUES ({id_dish}, {second_id});")
         connection.commit()
 
 
-def fill_all_ingredients(ingredient_id, name: str, description, image, category):
+def fill_cuisine(name):
     with connection.cursor() as cursor:
-        cursor.execute(f"INSERT INTO `All_Ingredients` (IngredientID, Name, Description, image, Category) "
-                       f"VALUES ({ingredient_id}, '{name}', '{description}', '{image}', '{category}');")
+        cursor.execute(f"INSERT INTO `base_cuisine` (name) "
+                       f"VALUES ('{name}');")
         connection.commit()
+
+
+# def fill_all_ingredients(ingredient_id, name: str, description, image, category):
+#     with connection.cursor() as cursor:
+#         cursor.execute(f"INSERT INTO `All_Ingredients` (IngredientID, Name, Description, image, Category) "
+#                        f"VALUES ({ingredient_id}, '{name}', '{description}', '{image}', '{category}');")
+#         connection.commit()
